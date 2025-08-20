@@ -3,11 +3,12 @@ use std::collections::HashMap;
 use colored::*;
 use regex::Regex;
 
-fn count_captured(map: &HashMap<&str, Regex>, string: &str) -> u32 {
-  let mut captured_count = 0;
-  for i in map.values() {
-    if let Some(_) = i.captures(string) {
-      captured_count += 1;
+fn count_captured<'a>(map: &'a HashMap<&str, Regex>, string: &'a str) -> Vec<&'a str> {
+  let mut captured: Vec<&str> = Vec::new();
+  
+  for re in map.values() {
+    if let Some(cap) = re.captures(string) {
+      captured.push(&string [cap.start()..mat.end()]);
     }
   }
 
@@ -39,12 +40,12 @@ fn main() {
     while let Some(word) = iter.next() {
       let mut word_final: ColoredString = word.normal();
 
-      println!("{} for {}", 
+      println!("{:?} for {}", 
         count_captured(&rexmap, word.to_string().as_str()),
         word
         );
 
-      for _ in 0..count_captured(&rexmap, word.to_string().as_str()) {
+      for _ in 0..3 {
         if word == "\n" {
           result.push("\n".normal());
           continue;
