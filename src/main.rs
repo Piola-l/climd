@@ -7,13 +7,18 @@ fn main() {
   let bold_rex = Regex::new(r"\*\*(\w+)\*\*").unwrap();
   let strikethrough_rex = Regex::new(r"\~\~(\w+)\~\~").unwrap();
   
-  let text = "*foo* **bar** ~~baz~~";
+  let text = "
+    # Header 1 \n
+    *foo* **bar** ~~baz~~";
 
+  let mut iter = text.split_whitespace().peekable();
   let mut result: Vec<ColoredString> = Vec::new();
-
-  for word in text.split_whitespace() { 
-    if word.chars().nth(0).unwrap() == "#" {
-      break;
+ 
+  while let Some(word) = iter.next() {
+    if word.starts_with("#") {
+      if let Some(next_word) = iter.next() {
+        result.push(next_word.reversed());
+      }
     }
 
     // bold
@@ -45,6 +50,6 @@ fn main() {
   //result.push("reversed".reversed());
 
   for i in result {
-    println!("{i}");
+    print!("{i}");
   }
 }
