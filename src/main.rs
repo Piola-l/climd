@@ -1,36 +1,49 @@
-use std::collections::HashMap;
-
+use std::{env, fs, collections::HashMap};
 use colored::*;
 use regex::Regex;
 
-fn count_captured<'a>(map: &'a HashMap<&str, Regex>, string: &'a str) -> Vec<&'a str> {
-  let mut captured: Vec<&str> = Vec::new();
+
+fn build_regexmap() -> HashMap<String, Regex> {
+  let mut map: HashMap<String, Regex> = HashMap::new();
   
-  for re in map.values() {
-    if let Some(cap) = re.captures(string) {
-      captured.push(&string [cap.start()..mat.end()]);
-    }
-  }
-
-  captured_count
-}
-
-fn main() {
-  let mut rexmap: HashMap<&str, Regex> = HashMap::new();
   let italic_rex = Regex::new(r"\*(\w+)\*").unwrap();
   let bold_rex = Regex::new(r"\*\*(\w+)\*\*").unwrap();
   let strikethrough_rex = Regex::new(r"~~(.+?)~~").unwrap();
-  
-  rexmap.insert("italic", Regex::new(r"\*(\w+)\*").unwrap());
-  rexmap.insert("bold", Regex::new(r"\*\*(\w+)\*\*").unwrap());
-  rexmap.insert("strikethrough", Regex::new(r"~~(.+?)~~").unwrap());
 
-  let text = 
-"
-# Header 1 
-*foo* ~~**bar**~~ ~~baz~~
-"
-  ;
+  map.insert("italic".to_string(), italic_rex); 
+  map.insert("bold".to_string(), bold_rex); 
+  map.insert("strikethrough".to_string(), strikethrough_rex);
+
+  map
+}
+
+
+fn count_captured<'a>(map: &'a HashMap<String, Regex>, string: &'a str) -> Vec<String> {
+  let mut captured: Vec<String> = Vec::new();
+
+  for (k,v) in map {
+    if let Some(_) = v.captures(string) {
+      captured.push(k.to_owned());
+    }
+  }
+
+  captured
+}
+
+fn style_by_string(text: ColoredString, style: String) -> ColoredString {
+  match style.as_str() {
+    "italic" => text.italic(),
+    "bold" => text.bold(),
+    "strikethrough" => text.strikethrough(),
+    _ => text.normal()
+  }
+}
+
+fn main() {
+  let rexmap = build_regexmap(); 
+
+  let args: Vec<String> = env::args().collect();
+  let text = fs::read_to_string(&args[1]).expect("Error reading the file.");
 
   let mut result: Vec<ColoredString> = Vec::new();
  
@@ -59,22 +72,9 @@ fn main() {
           break; // остальная строка уже обработана
         }
 
-        // bold
-        if let Some(cap) = bold_rex.captures(word_final.to_string().as_str()) {
-          println!("boldcap1: {}", &cap[1]);
-          word_final = cap[1].bold();
+        for style in count_captured(&rexmap, word.to_string().as_str()) {
+          word_final = style_by_string(word_final, style);
         }
-
-        // italic
-        if let Some(cap) = italic_rex.captures(word_final.to_string().as_str()) {
-          word_final = cap[1].italic();
-        }
-
-        // strikethrough
-        if let Some(cap) = strikethrough_rex.captures(word) {
-          word_final = cap[1].strikethrough();
-        }
-
       }
 
       result.push(word_final.clone());
@@ -82,14 +82,10 @@ fn main() {
     }
   }
 
-  //result.push("normal".normal());
-  //result.push("purple".purple());
-  //result.push("bold".bold());
-  //result.push("italic".italic());
-  //result.push("strikethrough".strikethrough().bold);
-  //result.push("reversed".reversed());
-
   for i in result {
     print!("{i}");
   }
+
+  println!();
+
 }
