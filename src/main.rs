@@ -2,13 +2,12 @@ use std::{env, fs, collections::HashMap};
 use colored::*;
 use regex::Regex;
 
-
 fn build_regexmap() -> HashMap<String, Regex> {
   let mut map: HashMap<String, Regex> = HashMap::new();
   
-  let italic_rex = Regex::new(r"\*(\w+)\*").unwrap();
   let bold_rex = Regex::new(r"\*\*(\w+)\*\*").unwrap();
-  let strikethrough_rex = Regex::new(r"~~(.+?)~~").unwrap();
+  let italic_rex = Regex::new(r"(?:^|[^*])\*([^*]+)\*(?:[^*]|$)").unwrap();
+  let strikethrough_rex = Regex::new(r"\~\~(.+?)\~\~").unwrap();
 
   map.insert("italic".to_string(), italic_rex); 
   map.insert("bold".to_string(), bold_rex); 
@@ -18,19 +17,21 @@ fn build_regexmap() -> HashMap<String, Regex> {
 }
 
 
-fn count_captured<'a>(map: &'a HashMap<String, Regex>, string: &'a str) -> Vec<String> {
-  let mut captured: Vec<String> = Vec::new();
+fn count_captured<'a>(map: &'a HashMap<String, Regex>, string: &'a String) -> String {
+  let mut result = string.to_owned();
 
   for (k,v) in map {
-    if let Some(_) = v.captures(string) {
-      captured.push(k.to_owned());
+    if let Some(cap) = v.captures(string) {
+      println!("{} for {:?}", k, string);
+      result = style_by_string(&cap[1].to_string(), &k).to_string();
+      //captured.push(k.to_owned());
     }
   }
 
-  captured
+  result
 }
 
-fn style_by_string(text: ColoredString, style: String) -> ColoredString {
+fn style_by_string(text: &String, style: &String) -> ColoredString {
   match style.as_str() {
     "italic" => text.italic(),
     "bold" => text.bold(),
@@ -45,40 +46,39 @@ fn main() {
   let args: Vec<String> = env::args().collect();
   let text = fs::read_to_string(&args[1]).expect("Error reading the file.");
 
-  let mut result: Vec<ColoredString> = Vec::new();
+  let mut result: Vec<String> = Vec::new();
  
   for line in text.split_inclusive('\n') {
-    let mut iter = line.split(' ').peekable();
+    let mut iter = line.split(' ');
    
     while let Some(word) = iter.next() {
-      let mut word_final: ColoredString = word.normal();
+      let mut word_final: String = word.to_string();
 
-      println!("{:?} for {}", 
-        count_captured(&rexmap, word.to_string().as_str()),
-        word
-        );
+      //println!("{:?} for {}", 
+      //  count_captured(&rexmap, word.to_string());
+      //  word
+      //  );
 
-      for _ in 0..3 {
-        if word == "\n" {
-          result.push("\n".normal());
-          continue;
-        }
-
-        // Header 1
-        if word_final.starts_with("#") {
-          let header = iter.clone().collect::<Vec<&str>>().join(" ");
-          word_final = header.reversed();
-          result.push(word_final.clone());
-          break; // остальная строка уже обработана
-        }
-
-        for style in count_captured(&rexmap, word.to_string().as_str()) {
-          word_final = style_by_string(word_final, style);
-        }
+      if word == "\n" {
+        result.push("\n".normal().to_string());
+        continue;
       }
 
+      // Header 1
+      //if word_final.starts_with("#") {
+        //let header = iter.clone().collect::<Vec<&str>>().join(" ");
+        //word_final = header.reversed().to_string();
+        //result.push(word_final.clone());
+        //break; // остальная строка уже обработана
+      //}
+
+      println!("w: {}", word);
+      let word = count_captured(&rexmap, &word_final.to_string());
+      word_final = word;
+      println!("w f: {} \n", word_final);
+
       result.push(word_final.clone());
-      result.push(" ".normal());
+      result.push(" ".to_string());
     }
   }
 

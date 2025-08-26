@@ -2,4 +2,4 @@
 
 Preview *markdown* in **terminal**
 
-~~**foo**~~ ==bar==
+**~~foo~~** ==bar== ***baz*** ~~*qux*~~
